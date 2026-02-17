@@ -1,0 +1,69 @@
+import { track } from 'ripple';
+
+export component App() {
+	let count = track(0);
+
+	<div class="app">
+		<h1>{'Ripple SSR Template'}</h1>
+		<p class="subtitle">
+			{'Server rendered via @ripple-ts/meta, hydrated by client entrypoint.'}
+		</p>
+
+		<div class="counter">
+			<button onClick={() => @count--}>{'-'}</button>
+			<span class="count">{@count}</span>
+			<button onClick={() => @count++}>{'+'}</button>
+		</div>
+	</div>
+
+	<style>
+		.app {
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			background: radial-gradient(circle at top left, #1a1c2b, #0d0e17 85%);
+			color: #f2f4f8;
+			font-family: 'Inter', 'Segoe UI', sans-serif;
+			padding: 1rem;
+			gap: 0.75rem;
+		}
+
+		.subtitle {
+			color: #b0b3c2;
+			margin: 0;
+			text-align: center;
+			max-width: 42rem;
+		}
+
+		.counter {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			background: rgba(18, 19, 29, 0.75);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 0.75rem;
+			padding: 0.75rem 1rem;
+		}
+
+		.count {
+			min-width: 3ch;
+			text-align: center;
+			font-weight: 600;
+		}
+
+		button {
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			border-radius: 0.5rem;
+			background: rgba(0, 0, 0, 0.2);
+			color: #f2f4f8;
+			padding: 0.25rem 0.75rem;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background: rgba(0, 0, 0, 0.35);
+		}
+	</style>
+}

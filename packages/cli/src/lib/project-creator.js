@@ -20,6 +20,8 @@ import { downloadTemplate, getLocalTemplatePath, isLocalDevelopment } from './te
  * @param {PackageManager} options.packageManager - Package manager to use
  * @param {boolean} options.gitInit - Whether to initialize Git
  * @param {string} [options.stylingFramework] - Styling framework to use
+ * @param {boolean} [options.ssr] - Whether to scaffold SSR server wiring
+ * @param {string} [options.adapter] - SSR adapter to use (default: node)
  */
 export async function createProject({
 	projectName,
@@ -28,6 +30,8 @@ export async function createProject({
 	packageManager = 'npm',
 	gitInit = false,
 	stylingFramework = 'vanilla',
+	ssr = false,
+	adapter = 'node',
 }) {
 	console.log(dim(`Creating project: ${projectName}`));
 	console.log(dim(`Template: ${templateName}`));
@@ -99,40 +103,58 @@ export async function createProject({
 		throw error;
 	}
 
-	// Step 4: Update package.json
-	const spinner4 = ora('Configuring package.json...').start();
+	// Step 4: Scaffold SSR wiring (optional)
+	if (ssr) {
+		const spinner4 = ora('Scaffolding SSR server wiring...').start();
+		try {
+			scaffoldSSR(projectPath, adapter);
+			spinner4.succeed('SSR wiring created');
+		} catch (error) {
+			spinner4.fail('Failed to scaffold SSR wiring');
+			if (isTemporary) {
+				rmSync(templatePath, { recursive: true, force: true });
+			}
+			throw error;
+		}
+	}
+
+	// Step 5: Update package.json
+	const spinner5 = ora('Configuring package.json...').start();
 	try {
-		updatePackageJson(projectPath, projectName, packageManager, stylingFramework);
-		spinner4.succeed('Package.json configured');
+		updatePackageJson(projectPath, projectName, packageManager, stylingFramework, {
+			ssr,
+			adapter,
+		});
+		spinner5.succeed('Package.json configured');
 	} catch (error) {
-		spinner4.fail('Failed to configure package.json');
+		spinner5.fail('Failed to configure package.json');
 		if (isTemporary) {
 			rmSync(templatePath, { recursive: true, force: true });
 		}
 		throw error;
 	}
 
-	// Step 5: Configure styling
-	const spinner5 = ora('Configuring styling framework...').start();
+	// Step 6: Configure styling
+	const spinner6 = ora('Configuring styling framework...').start();
 	try {
 		configureStyling(projectPath, stylingFramework);
-		spinner5.succeed('Styling framework configured');
+		spinner6.succeed('Styling framework configured');
 	} catch (error) {
-		spinner5.fail('Failed to configure styling framework');
+		spinner6.fail('Failed to configure styling framework');
 		if (isTemporary) {
 			rmSync(templatePath, { recursive: true, force: true });
 		}
 		throw error;
 	}
 
-	// Step 6: Initialize Git (if requested)
+	// Step 7: Initialize Git (if requested)
 	if (gitInit) {
-		const spinner6 = ora('Initializing Git repository...').start();
+		const spinner7 = ora('Initializing Git repository...').start();
 		try {
 			execSync('git init', { cwd: projectPath, stdio: 'ignore' });
-			spinner6.succeed('Git repository initialized');
+			spinner7.succeed('Git repository initialized');
 		} catch (error) {
-			spinner6.warn('Git initialization failed (optional)');
+			spinner7.warn('Git initialization failed (optional)');
 		}
 	}
 
@@ -150,13 +172,103 @@ export async function createProject({
 }
 
 /**
+ * @param {string} projectPath
+ * @param {string} adapter
+ * @returns {void}
+ */
+function scaffoldSSR(projectPath, adapter) {
+	if (adapter !== 'node') {
+		throw new Error(`Unsupported SSR adapter: ${adapter}`);
+	}
+
+	const configPath = join(projectPath, 'ripple.config.js');
+	const routesPath = join(projectPath, 'src', 'routes.js');
+	const middlewarePath = join(projectPath, 'src', 'middleware.js');
+	const serverPath = join(projectPath, 'src', 'server.js');
+
+	const configSource = `import { defineConfig } from '@ripple-ts/meta';
+import { routes } from './src/routes.js';
+import { loggingMiddleware } from './src/middleware.js';
+import { serve } from '@ripple-ts/adapter-node';
+
+export default defineConfig({
+\tmode: 'hybrid',
+\tport: 3000,
+\tadapter: { serve },
+\troutes,
+\tapp: {
+\t\tmiddlewares: [loggingMiddleware],
+\t},
+});
+`;
+
+	const routesSource = `import { RenderRoute } from '@ripple-ts/meta/routing';
+// @ts-expect-error: known issue, we're working on it
+import { App } from './App.ripple';
+
+export const routes = [new RenderRoute({ path: '/', entry: App })];
+`;
+
+	const middlewareSource = `export async function loggingMiddleware(context, next) {
+\tconst response = await next();
+\treturn response;
+}
+`;
+
+	const serverSource = `import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+
+import config from '../ripple.config.js';
+import { createApp, createProdHandler } from '@ripple-ts/meta';
+
+const app = createApp({
+\troutes: config.routes,
+\tmode: config.mode,
+});
+
+for (const middleware of config.app?.middlewares ?? []) {
+\tapp.use(middleware);
+}
+
+let active_fetch = app.fetch;
+let active_middleware = null;
+
+if (process.env.NODE_ENV !== 'production') {
+\tconst { createDevHandler } = await import('@ripple-ts/meta/dev');
+\tconst dev = await createDevHandler(app, { root: process.cwd(), template: 'index.html' });
+\tactive_fetch = dev.fetch;
+\tactive_middleware = dev.middleware;
+} else {
+\tconst template = await readFile(new URL('../client/index.html', import.meta.url), 'utf-8');
+\tactive_fetch = createProdHandler(app, { template }).fetch;
+}
+
+export function fetch(request, platform) {
+\treturn active_fetch(request, platform);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+\tconst server = config.adapter.serve(fetch, { port: config.port, middleware: active_middleware });
+\tserver.listen();
+}
+`;
+
+	writeFileSync(configPath, configSource);
+	writeFileSync(routesPath, routesSource);
+	writeFileSync(middlewarePath, middlewareSource);
+	writeFileSync(serverPath, serverSource);
+}
+
+/**
  * Update package.json with project-specific configurations
  * @param {string} projectPath - Path to the project
  * @param {string} projectName - Name of the project
  * @param {PackageManager} packageManager - Package manager being used
  * @param {string} stylingFramework - Styling framework being used
+ * @param {{ ssr: boolean, adapter: string }} options - Additional options
  */
-function updatePackageJson(projectPath, projectName, packageManager, stylingFramework) {
+function updatePackageJson(projectPath, projectName, packageManager, stylingFramework, options) {
+	const { ssr, adapter } = options;
 	const packageJsonPath = join(projectPath, 'package.json');
 
 	if (!existsSync(packageJsonPath)) {
@@ -193,6 +305,28 @@ function updatePackageJson(projectPath, projectName, packageManager, stylingFram
 		packageJson.dependencies = {
 			...packageJson.dependencies,
 			bootstrap: '^5.3.0',
+		};
+	}
+
+	if (ssr) {
+		if (adapter !== 'node') {
+			throw new Error(`Unsupported SSR adapter: ${adapter}`);
+		}
+
+		packageJson.dependencies = {
+			...packageJson.dependencies,
+			'@ripple-ts/meta': 'latest',
+			'@ripple-ts/adapter-node': 'latest',
+		};
+
+		packageJson.scripts = {
+			...packageJson.scripts,
+			'dev:ssr': 'node src/server.js',
+			'build:client': 'vite build --outDir dist/client',
+			'build:server': 'vite build --ssr src/server.js --outDir dist/server',
+			build:
+				'vite build --outDir dist/client && vite build --ssr src/server.js --outDir dist/server',
+			'serve:ssr': 'node dist/server/server.js',
 		};
 	}
 
@@ -262,6 +396,8 @@ function updateDependencyVersions(packageJson) {
 	// Use the latest versions for Ripple packages
 	const latestVersions = {
 		ripple: 'latest',
+		'@ripple-ts/meta': 'latest',
+		'@ripple-ts/adapter-node': 'latest',
 		'@ripple-ts/vite-plugin': 'latest',
 		'@ripple-ts/prettier-plugin': 'latest',
 		'@ripple-ts/eslint-plugin': 'latest',

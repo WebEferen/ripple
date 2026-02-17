@@ -39,6 +39,8 @@ export interface SSRRenderResult {
 export type SSRRender = (component: SSRComponent) => Promise<SSRRenderResult>;
 export type render = (component: SSRComponent) => Promise<SSRRenderResult>;
 export type renderToStream = (component: SSRComponent) => Readable;
+export type get_css_for_hashes = (hashes: Set<string>) => string;
 
 export const render: render;
 export const renderToStream: renderToStream;
+export const get_css_for_hashes: get_css_for_hashes;

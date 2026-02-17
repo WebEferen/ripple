@@ -1,0 +1,38 @@
+{
+	"name": "@ripple-ts/template-ssr",
+	"version": "0.0.0",
+	"description": "",
+	"type": "module",
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"start": "node src/server.js",
+		"dev": "node src/server.js",
+		"build:client": "vite build --outDir dist/client",
+		"build:server": "vite build --ssr src/server.js --outDir dist/server",
+		"build": "vite build --outDir dist/client && vite build --ssr src/server.js --outDir dist/server",
+		"serve:ssr": "node dist/server/server.js --prod",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"eslint": "^9.0.0",
+		"@ripple-ts/eslint-plugin": "latest",
+		"prettier": "^3.6.2",
+		"@ripple-ts/prettier-plugin": "latest",
+		"@ripple-ts/eslint-parser": "latest",
+		"typescript": "^5.9.2",
+		"@typescript-eslint/parser": "^8.20.0",
+		"vite": "^7.1.4",
+		"@ripple-ts/vite-plugin": "latest",
+		"@ripple-ts/typescript-plugin": "latest"
+	},
+	"dependencies": {
+		"ripple": "latest",
+		"@ripple-ts/meta": "latest",
+		"@ripple-ts/adapter-node": "latest"
+	}
+}

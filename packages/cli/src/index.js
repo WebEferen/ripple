@@ -25,6 +25,8 @@ program
 	.argument('[project-name]', 'Name of the project to create')
 	.option('-t, --template <template>', 'Template to use (default: basic)')
 	.option('-p, --package-manager <pm>', 'Package manager to use (npm, yarn, pnpm, bun)')
+	.option('--ssr', 'Include SSR server wiring (experimental)')
+	.option('--adapter <adapter>', 'SSR adapter to use (default: node)', 'node')
 	.option('--no-git', 'Skip Git repository initialization')
 	.option('-y, --yes', 'Skip all prompts and use defaults')
 	.action(

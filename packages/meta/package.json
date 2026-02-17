@@ -1,0 +1,44 @@
+{
+  "name": "@ripple-ts/meta",
+  "description": "Metaframework primitives for Ripple (routing, middleware, SSR server)",
+  "license": "MIT",
+  "author": "Dominic Gannaway",
+  "version": "0.2.208",
+  "type": "module",
+  "module": "src/index.js",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./dev": {
+      "types": "./types/dev.d.ts",
+      "import": "./src/dev/index.js",
+      "default": "./src/dev/index.js"
+    },
+    "./routing": {
+      "types": "./types/routing.d.ts",
+      "import": "./src/routing/index.js",
+      "default": "./src/routing/index.js"
+    }
+  },
+  "homepage": "https://ripplejs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ripple-TS/ripple.git",
+    "directory": "packages/meta"
+  },
+  "bugs": {
+    "url": "https://github.com/Ripple-TS/ripple/issues"
+  },
+  "peerDependencies": {
+    "ripple": "catalog:peer",
+    "vite": ">=5.0.0"
+  },
+  "devDependencies": {
+    "ripple": "workspace:*",
+    "vite": "catalog:default"
+  }
+}

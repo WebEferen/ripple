@@ -1,7 +1,15 @@
 /** @import {PackageManager} from '../lib/project-creator.js' */
 
 /**
- * @typedef {{ template?: string, packageManager?: PackageManager, git?: boolean, yes?: boolean, help?: boolean }} CommandOptions
+ * @typedef {{
+ * 	template?: string,
+ * 	packageManager?: PackageManager,
+ * 	ssr?: boolean,
+ * 	adapter?: string,
+ * 	git?: boolean,
+ * 	yes?: boolean,
+ * 	help?: boolean,
+ * }} CommandOptions
  */
 
 import { basename, resolve, relative } from 'node:path';
@@ -110,6 +118,8 @@ export async function createCommand(projectName, options) {
 			packageManager,
 			gitInit,
 			stylingFramework,
+			ssr: options.ssr ?? false,
+			adapter: options.adapter ?? 'node',
 		});
 
 		showNextSteps(projectPath, packageManager);
