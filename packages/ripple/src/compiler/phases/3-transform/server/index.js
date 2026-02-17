@@ -1321,7 +1321,7 @@ const visitors = {
 			state.init?.push(b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal(value))));
 			// Push empty comment as end marker
 			state.init?.push(
-				b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal('<!---->'))  ),
+				b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal('<!---->'))),
 			);
 		} else {
 			// For dynamic values, compute hash at runtime
@@ -1348,7 +1348,7 @@ const visitors = {
 				state.init?.push(b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.id(value_id))));
 				// Push empty comment as end marker
 				state.init?.push(
-					b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal('<!---->'))  ),
+					b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal('<!---->'))),
 				);
 			}
 		}

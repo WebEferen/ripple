@@ -29,7 +29,7 @@ export function html(node, get_html, svg = false, mathml = false) {
 				// The anchor is the hash comment - we need to skip past it and its content
 				set_hydrate_node(anchor);
 				var next = hydrate_next();
-				
+
 				// Walk until we find the empty comment end marker
 				while (
 					next !== null &&
@@ -37,7 +37,7 @@ export function html(node, get_html, svg = false, mathml = false) {
 				) {
 					next = get_next_sibling(next);
 				}
-				
+
 				// Move past the end marker (if next sibling exists)
 				if (next !== null) {
 					var next_node = get_next_sibling(next);
@@ -62,11 +62,11 @@ export function html(node, get_html, svg = false, mathml = false) {
 		if (hydrating) {
 			// Following Svelte 5's approach: anchor is the hash comment
 			// Structure: <!--hash--><content><!---->
-			
+
 			// The anchor parameter is the hash comment
 			// Set hydrate_node to the hash comment to start processing
 			set_hydrate_node(anchor);
-			
+
 			// Skip past the hash comment to get to content
 			/** @type {Node | null} */
 			var next = hydrate_next();
