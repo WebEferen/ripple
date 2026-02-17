@@ -86,8 +86,21 @@ function transform_children(children, context) {
 		state.init?.push(
 			b.stmt(b.assignment('=', b.member(b.id('__output'), b.id('target')), b.literal('head'))),
 		);
-		for (const head_element of head_elements) {
+		for (let i = 0; i < head_elements.length; i++) {
+			const head_element = head_elements[i];
+			// Generate a hash for this head element to match client-side hydration
+			// Use both filename and index to ensure uniqueness
+			const hash_source = `${context.state.filename}:head:${i}:${head_element.start ?? 0}`;
+			const hash_value = hash(hash_source);
+
+			// Emit hydration marker comment with hash
+			state.init?.push(
+				b.stmt(b.call(b.member(b.id('__output'), b.id('push')), b.literal(`<!--${hash_value}-->`))),
+			);
+
 			transform_children(head_element.children, context);
+
+			// No closing marker needed for head elements - the hash is sufficient
 		}
 		state.init?.push(
 			b.stmt(b.assignment('=', b.member(b.id('__output'), b.id('target')), b.literal(null))),

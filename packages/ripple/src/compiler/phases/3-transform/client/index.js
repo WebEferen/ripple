@@ -55,6 +55,7 @@ import {
 	index_to_key,
 	is_element_dynamic,
 	is_inside_left_side_assignment,
+	hash,
 } from '../../../utils.js';
 import {
 	CSS_HASH_IDENTIFIER,
@@ -132,7 +133,7 @@ function visit_function(node, context) {
  * @param {AST.Element} node
  * @param {TransformClientContext} context
  */
-function visit_head_element(node, context) {
+function visit_head_element(node, index, context) {
 	const { state, visit } = context;
 
 	/** @type {TransformClientState['init']} */
@@ -154,10 +155,16 @@ function visit_head_element(node, context) {
 	);
 
 	if (init.length > 0 || update.length > 0 || final.length > 0) {
+		// Generate a hash for this head element based on filename and index
+		// Use both filename and index to ensure uniqueness across multiple head blocks
+		const hash_source = `${state.filename}:head:${index}:${node.start ?? 0}`;
+		const hash_value = hash(hash_source);
+
 		context.state.init?.push(
 			b.stmt(
 				b.call(
 					'_$_.head',
+					b.literal(hash_value),
 					b.arrow(
 						[b.id('__anchor')],
 						b.block([
@@ -3121,11 +3128,12 @@ function transform_children(children, context) {
 		}
 	}
 
-	for (const head_element of head_elements) {
+	for (let i = 0; i < head_elements.length; i++) {
+		const head_element = head_elements[i];
 		if (state.to_ts) {
 			transform_ts_child(head_element, /** @type {VisitorClientContext} */ ({ visit, state }));
 		} else {
-			visit_head_element(head_element, context);
+			visit_head_element(head_element, i, context);
 		}
 	}
 
