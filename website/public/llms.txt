@@ -1342,9 +1342,8 @@ export default defineConfig({
 
 ## Current Limitations
 
-- **SSR**: Currently SPA-only, SSR is almost ready and hydration coming soon
 - **Ecosystem**: Early stage - limited third-party library ecosystem
-- **Production Ready**: Currently in early development but has been used in production already
+- **Production Ready**: Currently in development but has been used in production already
 
 ## Resources
 
