@@ -3471,6 +3471,18 @@ function create_tsx_with_typescript_support(comments) {
 			// cover the end
 			context.location(loc.end.line, loc.end.column);
 		},
+		ReturnStatement(node, context) {
+			if (!node.loc) {
+				base_tsx.ReturnStatement?.(node, context);
+				return;
+			}
+
+			const { start, end } = node.loc;
+
+			context.location(start.line, start.column);
+			base_tsx.ReturnStatement?.(node, context);
+			context.location(end.line, end.column);
+		},
 		AwaitExpression(node, context) {
 			const loc = /** @type {AST.SourceLocation} */ (node.loc);
 			// the start needs to be covered as we don't cover it in visitors
@@ -3601,6 +3613,10 @@ function create_tsx_with_typescript_support(comments) {
 					context.location(node.loc.end.line, node.loc.end.column - 1);
 				}
 				context.write('>');
+			}
+
+			if (node.loc) {
+				context.location(node.loc.end.line, node.loc.end.column);
 			}
 		},
 		JSXClosingElement(node, context) {
