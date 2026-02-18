@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "ssr": "node ./ssr-dev.js",
+    "meta:ssr:hydrate": "node ./meta-ssr-dev.js",
+    "meta:ssr:only": "node ./meta-ssr-only-dev.js",
     "build": "vite build --outDir dist/client",
     "test": "vitest run",
     "debug-volar": "node volar-debug.js",

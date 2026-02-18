@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { inject_ssr } from '../../../meta/src/ssr.js';
+import { inject_ssr, strip_hydration_markers } from '../../../meta/src/ssr.js';
 
 describe('@ripple-ts/meta ssr injection', () => {
 	it('injects head, css, and body markers', () => {
@@ -13,5 +13,10 @@ describe('@ripple-ts/meta ssr injection', () => {
 		expect(html).toContain('<title>Test</title>');
 		expect(html).toContain('<style id="ripple-css">.x{color:red}</style>');
 		expect(html).toContain('<div>Body</div>');
+	});
+
+	it('strips hydration markers from html', () => {
+		const html = '<!--[--><div>Body</div><!--[!--><span>Else</span><!--]--><!--]-->';
+		expect(strip_hydration_markers(html)).toBe('<div>Body</div><span>Else</span>');
 	});
 });

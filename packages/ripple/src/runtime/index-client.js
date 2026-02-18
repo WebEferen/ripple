@@ -92,6 +92,11 @@ export function hydrate(component, options) {
 			component(/** @type {Comment} */ (anchor), props, active_block);
 		}, options.compat);
 	} catch (e) {
+		if (e === HYDRATION_ERROR) {
+			throw new Error(
+				'Hydration failed because the server-rendered HTML does not match the client component.',
+			);
+		}
 		throw e;
 	} finally {
 		set_hydrating(was_hydrating);

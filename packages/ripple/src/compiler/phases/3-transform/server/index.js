@@ -337,12 +337,19 @@ const visitors = {
 		if (node.css !== null) {
 			const hash_id = b.id(CSS_HASH_IDENTIFIER);
 			const hash = b.var(hash_id, b.literal(node.css.hash));
+			const css_for_component = render_stylesheets([node.css], context.state.minify_css);
 			context.state.stylesheets.push(node.css);
 
 			// Register CSS hash during rendering
 			body_statements.push(
 				hash,
-				b.stmt(b.call(b.member(b.id('__output'), b.id('register_css')), hash_id)),
+				b.stmt(
+					b.call(
+						b.member(b.id('__output'), b.id('register_css')),
+						hash_id,
+						b.literal(css_for_component),
+					),
+				),
 			);
 
 			if (node.metadata.styleIdentifierPresent) {
@@ -1640,6 +1647,7 @@ export function transform_server(filename, source, analysis, minify_css) {
 		// TODO: should we remove all `to_ts` usages we use the client rendering for that?
 		to_ts: false,
 		metadata: {},
+		minify_css,
 	};
 
 	state.imports.add(`import * as _$_ from 'ripple/internal/server'`);

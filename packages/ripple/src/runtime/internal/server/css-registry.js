@@ -1,10 +1,12 @@
 /**
  * Global CSS registry for SSR
  * Maps CSS hashes to their content
- * This persists across requests for performance (CSS is immutable per hash)
+ * This persists across requests for performance (CSS is immutable per hash).
+ * We store it on process so separate SSR module contexts (e.g. Vite module runner)
+ * can share the same registry.
  * @type {Map<string, string>}
  */
-const css_registry = new Map();
+const css_registry = process.__ripple_css_registry || (process.__ripple_css_registry = new Map());
 
 /**
  * Register a component's CSS

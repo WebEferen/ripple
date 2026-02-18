@@ -11,6 +11,7 @@ import { is_boolean_attribute } from '../../../compiler/utils.js';
 import { clsx } from 'clsx';
 import { normalize_css_property_name } from '../../../utils/normalize_css_property_name.js';
 import { BLOCK_CLOSE, BLOCK_OPEN } from '../../../constants.js';
+import { register_component_css } from './css-registry.js';
 
 export { escape };
 export { register_component_css as register_css } from './css-registry.js';
@@ -212,10 +213,14 @@ class Output {
 
 	/**
 	 * @param {string} hash
+	 * @param {string} [css]
 	 * @returns {void}
 	 */
-	register_css(hash) {
+	register_css(hash, css) {
 		this.css.add(hash);
+		if (css) {
+			register_component_css(hash, css);
+		}
 	}
 }
 

@@ -7,8 +7,9 @@ export type Middleware<Context = any> = (
 
 export type RenderRouteInit = {
 	path: string;
-	entry: any;
+	entry: any | string;
 	deliveryMode?: DeliveryMode;
+	disableHydration?: boolean;
 	server?: {
 		before?: Middleware[];
 		after?: Middleware[];
@@ -49,8 +50,9 @@ export class RenderRoute {
 	constructor(init: RenderRouteInit);
 	readonly type: 'render';
 	readonly path: string;
-	readonly entry: any;
+	readonly entry: any | string;
 	readonly delivery_mode: DeliveryMode;
+	readonly disable_hydration: boolean;
 	readonly server: {
 		before?: Middleware[];
 		after?: Middleware[];

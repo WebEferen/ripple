@@ -16,14 +16,13 @@ const app = createApp({
 			methods: ['GET'],
 			handler: async () =>
 				Response.json({
-					message: 'Hello from Meta SSR (hydration demo)',
+					message: 'Hello from Meta SSR-only demo',
 					timestamp: new Date().toISOString(),
 				}),
 		}),
 	],
 	mode: 'ssr',
-	disableHydration: false,
 });
 
-const dev = await createDevHandler(app, { root, template: 'index.hydration.html' });
-serve(dev.fetch, { port: 5174, middleware: dev.middleware }).listen();
+const dev = await createDevHandler(app, { root, template: 'index.ssr.html' });
+serve(dev.fetch, { port: 5175, middleware: dev.middleware }).listen();

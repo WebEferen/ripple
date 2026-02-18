@@ -2,7 +2,7 @@ import { get_css_for_hashes, render } from 'ripple/server';
 
 import { compose_middleware } from './middleware.js';
 import { match_route, RenderRoute, ServerRoute } from './routing/index.js';
-import { html_response, inject_ssr } from './ssr.js';
+import { html_response, inject_ssr, strip_hydration_markers } from './ssr.js';
 
 /**
  * @typedef {'client' | 'ssr' | 'hybrid'} AppMode
@@ -25,6 +25,96 @@ export function defineConfig(config) {
 }
 
 /**
+ * @param {any} resolved_entry
+ * @returns {any}
+ */
+function pick_component_export(resolved_entry) {
+	const component =
+		resolved_entry?.component ?? resolved_entry?.default ?? resolved_entry?.App ?? resolved_entry;
+
+	if (typeof component === 'function') {
+		return component;
+	}
+
+	if (resolved_entry && typeof resolved_entry === 'object') {
+		const functions = Object.values(resolved_entry).filter((value) => typeof value === 'function');
+		if (functions.length === 1) {
+			return functions[0];
+		}
+	}
+
+	return component;
+}
+
+/**
+ * @param {any} platform
+ * @returns {Promise<{ render: typeof render, get_css_for_hashes: typeof get_css_for_hashes }>}
+ */
+async function resolve_server_runtime(platform) {
+	if (typeof platform?.vite?.ssrLoadModule === 'function') {
+		try {
+			const runtime = await platform.vite.ssrLoadModule('ripple/server');
+			if (
+				typeof runtime?.render === 'function' &&
+				typeof runtime?.get_css_for_hashes === 'function'
+			) {
+				return {
+					render: runtime.render,
+					get_css_for_hashes: runtime.get_css_for_hashes,
+				};
+			}
+		} catch {}
+	}
+
+	if (typeof platform?.load_module === 'function') {
+		try {
+			const runtime = await platform.load_module('ripple/server');
+			if (
+				typeof runtime?.render === 'function' &&
+				typeof runtime?.get_css_for_hashes === 'function'
+			) {
+				return {
+					render: runtime.render,
+					get_css_for_hashes: runtime.get_css_for_hashes,
+				};
+			}
+		} catch {}
+	}
+
+	return { render, get_css_for_hashes };
+}
+
+/**
+ * @param {any} entry
+ * @param {any} platform
+ * @returns {Promise<{ component: any, render: typeof render, get_css_for_hashes: typeof get_css_for_hashes }>}
+ */
+async function resolve_route_component(entry, platform) {
+	let resolved_entry = entry;
+	let server_runtime = { render, get_css_for_hashes };
+
+	if (typeof entry === 'string') {
+		if (typeof platform?.vite?.ssrLoadModule === 'function') {
+			resolved_entry = await platform.vite.ssrLoadModule(entry);
+			server_runtime = await resolve_server_runtime(platform);
+		} else if (typeof platform?.load_module === 'function') {
+			resolved_entry = await platform.load_module(entry);
+			server_runtime = await resolve_server_runtime(platform);
+		} else {
+			throw new Error(
+				`RenderRoute entry "${entry}" requires platform.vite.ssrLoadModule() or platform.load_module().`,
+			);
+		}
+	}
+
+	const component = pick_component_export(resolved_entry);
+	if (typeof component !== 'function') {
+		throw new Error('RenderRoute entry did not resolve to a component function.');
+	}
+	return { component, ...server_runtime };
+}
+
+/**
  * @param {CreateAppOptions} options
  * @returns {{
  * 	use: (middleware: (context: any, next: () => Promise<Response>) => Promise<Response>) => void,
@@ -34,6 +124,7 @@ export function defineConfig(config) {
 export function createApp(options) {
 	const routes = options.routes;
 	const mode = options.mode ?? 'hybrid';
+	const app_disable_hydration = options.disableHydration ?? mode === 'ssr';
 
 	/** @type {Array<(context: any, next: () => Promise<Response>) => Promise<Response>>} */
 	const app_middlewares = [];
@@ -132,11 +223,12 @@ export function createApp(options) {
 		const template = await load_template(match.url, platform);
 
 		const handler = async () => {
-			const entry = render_route.entry;
-			const component = entry?.component ?? entry;
-			const result = await render(component);
-			const css_text = get_css_for_hashes(result.css);
-			const html = inject_ssr(template, { head: result.head, body: result.body, css_text });
+			const route = await resolve_route_component(render_route.entry, platform);
+			const result = await route.render(route.component);
+			const css_text = route.get_css_for_hashes(result.css);
+			const disable_hydration = app_disable_hydration || render_route.disable_hydration;
+			const body = disable_hydration ? strip_hydration_markers(result.body) : result.body;
+			const html = inject_ssr(template, { head: result.head, body, css_text });
 			return html_response(html);
 		};
 

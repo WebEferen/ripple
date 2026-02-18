@@ -1,7 +1,11 @@
-import { mount } from 'ripple';
+import { hydrate } from 'ripple';
 // @ts-expect-error: known issue, we're working on it
 import { App } from './App.ripple';
 
-mount(App, {
-	target: document.getElementById('root'),
-});
+const target = document.getElementById('root');
+
+if (!target) {
+	throw new Error('Missing #root mount target');
+}
+
+hydrate(App, { target });

@@ -8,8 +8,9 @@
  *
  * @typedef {{
  * 	path: string,
- * 	entry: any,
+ * 	entry: any | string,
  * 	deliveryMode?: DeliveryMode,
+ * 	disableHydration?: boolean,
  * 	server?: { before?: Middleware[], after?: Middleware[] },
  * }} RenderRouteInit
  *
@@ -163,6 +164,7 @@ export class RenderRoute {
 		this.path = normalize_route_path(init.path);
 		this.entry = init.entry;
 		this.delivery_mode = init.deliveryMode ?? 'ssr-complete';
+		this.disable_hydration = init.disableHydration ?? false;
 		this.server = init.server ?? {};
 		this.compiled_path = compile_route_path(this.path);
 	}

@@ -32,3 +32,8 @@ An SSR-ready Ripple application template using `@ripple-ts/meta` and the Node ad
 
 - Ripple Documentation: https://www.ripple-ts.com/
 - Vite Documentation: https://vitejs.dev/
+
+## Hydration Notes
+
+- This template is configured for `mode: 'hybrid'` and always uses `hydrate()` in the client entry.
+- In `@ripple-ts/meta`, `mode: 'ssr'` is SSR-only by default (hydration markers removed). Use `disableHydration: false` to opt back into hydration markers when needed.

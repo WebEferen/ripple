@@ -1,3 +1,5 @@
+const HYDRATION_MARKERS = /<!--\[!-->|<!--\[-->|<!--\]-->/g;
+
 /**
  * @param {string} css_text
  * @returns {string}
@@ -30,6 +32,16 @@ export function inject_ssr(template, ssr) {
 	}
 
 	return html;
+}
+
+/**
+ * Removes Ripple hydration markers from SSR output.
+ * Useful for SSR-only responses that should mount on the client instead of hydrate.
+ * @param {string} html
+ * @returns {string}
+ */
+export function strip_hydration_markers(html) {
+	return html.replace(HYDRATION_MARKERS, '');
 }
 
 /**

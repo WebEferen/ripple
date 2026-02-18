@@ -1,4 +1,9 @@
-import { TEXT_NODE } from '../../../constants.js';
+import {
+	DOCUMENT_FRAGMENT_NODE,
+	ELEMENT_NODE,
+	HYDRATION_ERROR,
+	TEXT_NODE,
+} from '../../../constants.js';
 import { hydrate_node, hydrating, set_hydrate_node } from './hydration.js';
 import { get_descriptor } from './utils.js';
 
@@ -66,11 +71,16 @@ export function first_child(node, is_text) {
 	if (!hydrating) {
 		return get_first_child(node);
 	}
-	var child = get_first_child(/** @type {Node} */ (hydrate_node));
+	var hydration_node = /** @type {Node} */ (hydrate_node);
+	var child = get_first_child(hydration_node);
 
 	// Handles the case where we have `<p>{text}</p>`, where `text` is empty
 	if (child === null) {
-		child = /** @type {Node} */ (hydrate_node).appendChild(create_text());
+		var node_type = hydration_node.nodeType;
+		if (node_type !== ELEMENT_NODE && node_type !== DOCUMENT_FRAGMENT_NODE) {
+			throw HYDRATION_ERROR;
+		}
+		child = hydration_node.appendChild(create_text());
 	} else if (is_text && child.nodeType !== TEXT_NODE) {
 		var text = create_text();
 		/** @type {Element | Text | Comment} */ (child)?.before(text);
@@ -120,12 +130,11 @@ export function get_next_sibling(node) {
  */
 export function next_sibling(node, is_text) {
 	let next_sibling = hydrating ? hydrate_node : node;
-	var last_sibling;
+	var last_sibling = next_sibling;
 
 	next_sibling = /** @type {ChildNode | null} */ (
 		get_next_sibling(/** @type {ChildNode} */ (next_sibling))
 	);
-	last_sibling = next_sibling;
 
 	if (!hydrating) {
 		return next_sibling;
@@ -139,6 +148,9 @@ export function next_sibling(node, is_text) {
 		// the SSR content was empty for the text, so we need to generate a new text
 		// node and insert it after the last sibling
 		if (next_sibling === null) {
+			if (last_sibling === null) {
+				throw HYDRATION_ERROR;
+			}
 			/** @type {ChildNode} */ (last_sibling).after(text);
 		} else {
 			/** @type {ChildNode} */ (next_sibling).before(text);

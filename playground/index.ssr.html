@@ -14,15 +14,11 @@
 
 		<script type="module">
 			import { mount } from 'ripple';
-			import { App } from '/src/App.ripple';
-			import { createReactCompat } from '@ripple-ts/compat-react';
+			import { App } from '/src/MetaApp.ripple';
 
 			const target = document.getElementById('root');
 			mount(App, {
 				target,
-				compat: {
-					react: createReactCompat(),
-				},
 			});
 		</script>
 	</body>

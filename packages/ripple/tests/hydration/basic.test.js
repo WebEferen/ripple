@@ -5,6 +5,7 @@ import { hydrateComponent, container } from '../setup-hydration.js';
 import * as ServerComponents from './compiled/server/basic.js';
 // Import client-compiled components
 import * as ClientComponents from './compiled/client/basic.js';
+import * as ClientEventComponents from './compiled/client/events.js';
 
 describe('hydration > basic', () => {
 	it('hydrates static text content', async () => {
@@ -57,5 +58,13 @@ describe('hydration > basic', () => {
 	it('hydrates expression content', async () => {
 		await hydrateComponent(ServerComponents.ExpressionContent, ClientComponents.ExpressionContent);
 		expect(container.innerHTML).toBeHtml('<div>42</div><span>COMPUTED</span>');
+	});
+
+	it('throws a hydration mismatch error for incompatible server/client markup', async () => {
+		await expect(
+			hydrateComponent(ServerComponents.StaticText, ClientEventComponents.ClickCounter),
+		).rejects.toThrow(
+			'Hydration failed because the server-rendered HTML does not match the client component.',
+		);
 	});
 });
