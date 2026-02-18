@@ -232,7 +232,7 @@ export function match_route(routes, request) {
 		const params = route.match(url);
 		if (params == null) continue;
 
-		if (route.type === 'server') {
+		if (is_server_route(route)) {
 			if (route.methods == null) {
 				return { type: 'match', route, url, params };
 			}

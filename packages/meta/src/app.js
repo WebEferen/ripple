@@ -1,7 +1,7 @@
 import { get_css_for_hashes, render } from 'ripple/server';
 
 import { compose_middleware } from './middleware.js';
-import { match_route, RenderRoute, ServerRoute } from './routing/index.js';
+import { match_route, RenderRoute, is_server_route } from './routing/index.js';
 import { html_response, inject_ssr, strip_hydration_markers } from './ssr.js';
 
 /**
@@ -127,7 +127,7 @@ export function createApp(options) {
 	const app_disable_hydration = options.disableHydration ?? mode === 'ssr';
 
 	/** @type {Array<(context: any, next: () => Promise<Response>) => Promise<Response>>} */
-	const app_middlewares = [];
+	const middlewares = [];
 
 	/**
 	 * @param {URL} url
@@ -174,7 +174,7 @@ export function createApp(options) {
 		const state = new Map();
 		const app = {
 			routes,
-			middlewares: app_middlewares,
+			middlewares,
 			platform,
 			config: options,
 		};
@@ -190,14 +190,14 @@ export function createApp(options) {
 		};
 
 		/** @type {Array<(context: any, next: () => Promise<Response>) => Promise<Response>>} */
-		const middlewares = [...app_middlewares];
+		const app_middlewares = [...middlewares];
 
-		if (match.route instanceof ServerRoute) {
+		if (is_server_route(match.route)) {
 			const server_route = /** @type {any} */ (match.route);
-			middlewares.push(...server_route.before);
+			app_middlewares.push(...server_route.before);
 			for (let i = server_route.after.length - 1; i >= 0; i--) {
 				const after = server_route.after[i];
-				middlewares.push(async (ctx, next) => {
+				app_middlewares.push(async (ctx, next) => {
 					const response = await next();
 					let called = false;
 					return await after(ctx, async () => {
@@ -209,10 +209,10 @@ export function createApp(options) {
 			}
 
 			const handler = async () => await server_route.handler(context);
-			return await compose_middleware(middlewares, handler)(context);
+			return await compose_middleware(app_middlewares, handler)(context);
 		}
 
-		const render_route = /** @type {RenderRoute} */ (match.route);
+		const render_route = match.route;
 
 		if (mode === 'client' || render_route.delivery_mode === 'client-only') {
 			const template = await load_template(match.url, platform);
@@ -235,7 +235,7 @@ export function createApp(options) {
 		const after_middlewares = render_route.server?.after ?? [];
 		for (let i = after_middlewares.length - 1; i >= 0; i--) {
 			const after = after_middlewares[i];
-			middlewares.push(async (ctx, next) => {
+			app_middlewares.push(async (ctx, next) => {
 				const response = await next();
 				let called = false;
 				return await after(ctx, async () => {
@@ -246,12 +246,12 @@ export function createApp(options) {
 			});
 		}
 
-		return await compose_middleware(middlewares, handler)(context);
+		return await compose_middleware(app_middlewares, handler)(context);
 	}
 
 	return {
 		use(middleware) {
-			app_middlewares.push(middleware);
+			middlewares.push(middleware);
 		},
 		fetch,
 	};
