@@ -140,6 +140,7 @@ declare module 'estree' {
 		ServerIdentifier: ServerIdentifier;
 		Text: TextNode;
 		JSXEmptyExpression: ESTreeJSX.JSXEmptyExpression;
+		ParenthesizedExpression: ParenthesizedExpression;
 	}
 
 	// Missing estree type
