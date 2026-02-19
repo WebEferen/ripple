@@ -183,8 +183,15 @@ export function template(content, flags) {
  */
 export function append(anchor, dom, skip_advance) {
 	if (hydrating) {
+		// When skip_advance is true, the caller (e.g., a fragment component) has already
+		// used next() to position hydrate_node correctly. We must NOT reset it.
+		if (skip_advance) {
+			return;
+		}
+
 		// During hydration, if anchor === dom, we're hydrating a child component
-		// where the "anchor" IS the content. Don't advance past it.
+		// where the "anchor" IS the content. Preserve the cursor on the
+		// template's hydrated end node so sibling traversal in the parent is correct.
 		if (anchor === dom) {
 			pop(dom);
 			return;
@@ -210,7 +217,7 @@ export function append(anchor, dom, skip_advance) {
 			}
 		}
 
-		if (!skip_advance) hydrate_next();
+		hydrate_next();
 		return;
 	}
 	anchor.before(/** @type {Node} */ (dom));
